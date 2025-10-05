@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,16 +9,38 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// todo: structs for list, item
+// Data structs for Items and List
+
+type Item struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Section  string `json:"section"` // section such as diary, vegetables, canned goods, bread etc. Will not be mandatory/be given a placeholder value
+	Quantity int    `json:"quantity"`
+	Bought   bool   `json:"bought"`
+}
+
+type List struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Items []Item `json:"items"`
+}
+
+// In-memory data, temp storage
+var items []Item
+
+// Handlers
 
 // handler to create a list
 func createListHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "create list - not implemented yet")
 }
 
-// handler to get all items of a list
+// GET /items - all items of a list
 func getItemsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "list all items - not implemented yet")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+	// fmt.Fprintln(w, "list all items - not implemented yet")
+	// checkpoint, break
 }
 
 // handler to add an item to a list
