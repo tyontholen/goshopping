@@ -35,34 +35,69 @@ func createListHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "create list - not implemented yet")
 }
 
-// GET /items - all items of a list
+// GET /items - get all items of a list
 func getItemsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
-	// fmt.Fprintln(w, "list all items - not implemented yet")
-	// checkpoint, break
 }
 
-// handler to add an item to a list
+// POST /items - to add an item to a list
 func addItemHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "add item - not implemented yet")
+	var newItem Item
+	err := json.NewDecoder(r.Body).Decode(&newItem)
+	if err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	items = append(items, newItem)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newItem)
 }
 
-// handler to get one item by ID
+// GET /items/{id} - get one item by ID
 func getItemByIDHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprintf(w, "get item with id %s - not implemented yet\n", id)
+
+	for _, item := range items {
+		if item.ID == id {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+	http.Error(w, "item not found", http.StatusNotFound)
 }
 
-// handler to update item
+// PUT /items/{id} - update item by ID
 func updateItemHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprintf(w, "update item %s by id - not implemented yet\n", id)
+
+	var updated Item
+	err := json.NewDecoder(r.Body).Decode(&updated)
+	if err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	for i, item := range items {
+		if item.ID == id {
+			items[i].Name = updated.Name
+			items[i].Quantity = updated.Quantity
+			items[i].Section = updated.Section
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(items[i])
+			return
+		}
+	}
+	http.Error(w, "item not found", http.StatusNotFound)
 }
 
-// handler to delete item
+// DELETE /items/{id} - delete an item by ID
+// todo: finish the rest of the handlers
 func deleteItemHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
