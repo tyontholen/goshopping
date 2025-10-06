@@ -42,6 +42,7 @@ func getItemsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /items - to add an item to a list
+// todo: auto increment ID when adding items. Default bought status to false
 func addItemHandler(w http.ResponseWriter, r *http.Request) {
 	var newItem Item
 	err := json.NewDecoder(r.Body).Decode(&newItem)
@@ -97,18 +98,35 @@ func updateItemHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // DELETE /items/{id} - delete an item by ID
-// todo: finish the rest of the handlers
 func deleteItemHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprintf(w, "delete item %s - not implemented yet\n", id)
+
+	for i, item := range items {
+		if item.ID == id {
+			items = append(items[:i], items[i+1:]...)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+	}
+	http.Error(w, "item not found", http.StatusNotFound)
 }
 
-// handler to toggle bought status (bool)
+// PATCH /items/{id}/toggle - toggle bought status by ID
 func toggleItemHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprintf(w, "update item %s by id - not implemented yet\n", id)
+
+	for i, item := range items {
+		if item.ID == id {
+			items[i].Bought = !item.Bought
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(items[i])
+			return
+		}
+	}
+	http.Error(w, "item not found", http.StatusNotFound)
+
 }
 
 func main() {
