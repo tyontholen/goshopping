@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -27,10 +28,12 @@ type List struct {
 
 // In-memory data, temp storage
 var items []Item
+var nextID = 1
 
 // Handlers
 
 // handler to create a list
+// todo: lists functionality
 func createListHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "create list - not implemented yet")
 }
@@ -42,7 +45,6 @@ func getItemsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /items - to add an item to a list
-// todo: auto increment ID when adding items. Default bought status to false
 func addItemHandler(w http.ResponseWriter, r *http.Request) {
 	var newItem Item
 	err := json.NewDecoder(r.Body).Decode(&newItem)
@@ -50,6 +52,20 @@ func addItemHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	// check for duplicates, ignoring extra spaces and not case sesestive
+	newName := strings.ToLower(strings.TrimSpace(newItem.Name))
+	for _, item := range items {
+		if strings.ToLower(strings.TrimSpace(item.Name)) == newName {
+			http.Error(w, "item with this name already exists", http.StatusConflict)
+			return
+		}
+	}
+
+	// auto ID and default Bought to false
+	newItem.ID = fmt.Sprintf("%d", nextID)
+	newItem.Bought = false
+	nextID++
 
 	items = append(items, newItem)
 	w.Header().Set("Content-Type", "application/json")
