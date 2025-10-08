@@ -27,15 +27,39 @@ type List struct {
 }
 
 // In-memory data, temp storage
-var items []Item
-var nextID = 1
+// changing up variables to work with both items and lists
+var lists []List
+var nextListID = 1
+var nextItemID = 1
 
 // Handlers
 
 // handler to create a list
-// todo: lists functionality
 func createListHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "create list - not implemented yet")
+	var newList List
+	err := json.NewDecoder(r.Body).Decode(&newList)
+	if err != nil || strings.TrimSpace(newList.Name) == "" {
+		http.Error(w, "invalid request body or missing name", http.StatusBadRequest)
+		return
+	}
+
+	// check for duplicates
+	newName := strings.ToLower(strings.TrimSpace(newList.Name))
+	for _, list := range lists {
+		if strings.ToLower(list.Name) == newName {
+			http.Error(w, "list with this name already exists", http.StatusConflict)
+			return
+		}
+	}
+
+	newList.ID = fmt.Sprintf("%d", nextListID)
+	nextListID++
+
+	lists = append(lists, newList)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newList)
 }
 
 // GET /items - get all items of a list
@@ -45,6 +69,7 @@ func getItemsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /items - to add an item to a list
+// todo: update to add items to specific list
 func addItemHandler(w http.ResponseWriter, r *http.Request) {
 	var newItem Item
 	err := json.NewDecoder(r.Body).Decode(&newItem)
