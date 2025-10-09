@@ -18,7 +18,7 @@ Special effects when special groceries are checked done, like potato chips
 
 
 // curls for testing API
-
+<!-- update api endpoints after list feat -->
 ## Create a new shopping list
 curl -X POST http://localhost:8080/list
 

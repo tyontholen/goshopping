@@ -34,7 +34,7 @@ var nextItemID = 1
 
 // Handlers
 
-// handler to create a list
+// POST /list - create a new list
 func createListHandler(w http.ResponseWriter, r *http.Request) {
 	var newList List
 	err := json.NewDecoder(r.Body).Decode(&newList)
@@ -62,40 +62,48 @@ func createListHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newList)
 }
 
+// POST /lists/{listID}/items - to add an item to a list
+func addItemToListHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	listID := vars["listID"]
+
+	// find the list
+	for li, l := range lists {
+		if l.ID == listID {
+			var newItem Item
+			if err := json.NewDecoder(r.Body).Decode(&newItem); err != nil {
+				http.Error(w, "invalid request body", http.StatusBadRequest)
+				return
+			}
+			// check for duplicates, ignoring extra spaces and not case sesestive
+			newName := strings.ToLower(strings.TrimSpace(newItem.Name))
+			for _, item := range l.Items {
+				if strings.ToLower(strings.TrimSpace(item.Name)) == newName {
+					http.Error(w, "item with this name already exists", http.StatusConflict)
+					return
+				}
+			}
+			// auto ID and default Bought to false
+			newItem.ID = fmt.Sprintf("%d", nextItemID)
+			newItem.Bought = false
+			nextItemID++
+
+			lists[li].Items = append(lists[li].Items, newItem)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(newItem)
+			return
+
+		}
+	}
+	http.Error(w, "list not found", http.StatusNotFound)
+}
+
+// todo: update get endpoint to get all items for list by ID
 // GET /items - get all items of a list
 func getItemsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
-}
-
-// POST /items - to add an item to a list
-// todo: update to add items to specific list
-func addItemHandler(w http.ResponseWriter, r *http.Request) {
-	var newItem Item
-	err := json.NewDecoder(r.Body).Decode(&newItem)
-	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	// check for duplicates, ignoring extra spaces and not case sesestive
-	newName := strings.ToLower(strings.TrimSpace(newItem.Name))
-	for _, item := range items {
-		if strings.ToLower(strings.TrimSpace(item.Name)) == newName {
-			http.Error(w, "item with this name already exists", http.StatusConflict)
-			return
-		}
-	}
-
-	// auto ID and default Bought to false
-	newItem.ID = fmt.Sprintf("%d", nextID)
-	newItem.Bought = false
-	nextID++
-
-	items = append(items, newItem)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(newItem)
 }
 
 // GET /items/{id} - get one item by ID
