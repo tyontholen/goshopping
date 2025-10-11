@@ -59,13 +59,28 @@ func createListHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(newList)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "List created successfully",
+		"list":    newList,
+	})
 }
 
 // GET /lists - get all lists
 func getAllListsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(lists)
+
+	var summaries []map[string]string
+	for _, l := range lists {
+		summaries = append(summaries, map[string]string{
+			"id":   l.ID,
+			"name": l.Name,
+		})
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Lists retrieved successfully",
+		"lists":   summaries,
+	})
 }
 
 // DELETE /lists/{listID} - delete a list and all its items by ID
@@ -76,7 +91,10 @@ func deleteListHandler(w http.ResponseWriter, r *http.Request) {
 	for i, l := range lists {
 		if l.ID == listID {
 			lists = append(lists[:i], lists[i+1:]...)
-			w.WriteHeader(http.StatusNoContent)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]string{
+				"message": "List deleted successfully",
+			})
 			return
 		}
 	}
@@ -112,7 +130,10 @@ func addItemToListHandler(w http.ResponseWriter, r *http.Request) {
 			lists[li].Items = append(lists[li].Items, newItem)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(newItem)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Item added successfully",
+				"item":    newItem,
+			})
 			return
 
 		}
@@ -128,7 +149,10 @@ func getItemsFromListHandler(w http.ResponseWriter, r *http.Request) {
 	for _, l := range lists {
 		if l.ID == listID {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(l.Items)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Items retrieved successfully",
+				"items":   l.Items,
+			})
 			return
 		}
 	}
@@ -164,7 +188,10 @@ func updateItemInListHandler(w http.ResponseWriter, r *http.Request) {
 					}
 
 					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(lists[li].Items[i])
+					json.NewEncoder(w).Encode(map[string]interface{}{
+						"message": "Item updated successfully",
+						"item":    lists[li].Items[i],
+					})
 					return
 				}
 			}
@@ -186,7 +213,10 @@ func deleteItemInListHandler(w http.ResponseWriter, r *http.Request) {
 			for i, item := range l.Items {
 				if item.ID == itemID {
 					lists[li].Items = append(l.Items[:i], l.Items[i+1:]...)
-					w.WriteHeader(http.StatusNoContent)
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(map[string]string{
+						"message": "Item deleted successfully",
+					})
 					return
 				}
 			}
@@ -209,7 +239,10 @@ func toggleItemInListHandler(w http.ResponseWriter, r *http.Request) {
 				if item.ID == itemID {
 					lists[li].Items[i].Bought = !item.Bought
 					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(lists[li].Items[i])
+					json.NewEncoder(w).Encode(map[string]interface{}{
+						"message": "Item toggled successfully",
+						"item":    lists[li].Items[i],
+					})
 					return
 				}
 			}
