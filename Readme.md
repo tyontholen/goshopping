@@ -18,27 +18,30 @@ Special effects when special groceries are checked done, like potato chips
 
 
 // curls for testing API
-<!-- update api endpoints after list feat -->
 ## Create a new shopping list
-curl -X POST http://localhost:8080/list
+curl -X POST http://localhost:8080/list \
+  -H "Content-Type: application/json" \
+  -d "{\"name\": \"Groceries\"}"
 
-## Add a new item to a list by list ID
-curl -X POST http://localhost:8080/lists/{listID}/items
+## Add a new item to a list by list ID (listID 1 in example)
+curl -X POST http://localhost:8080/lists/1/items \
+  -H "Content-Type: application/json" \
+  -d "{\"name\": \"Milk\", \"quantity\": 2, \"section\": \"Dairy\"}"
 
-## Get all items from a list by list ID
-curl -X GET http://localhost:8080/lists/{listID}/items
+## Get all items from a list by list ID (listID 1 in example)
+curl -X GET http://localhost:8080/lists/1/items
 
-<!-- ## Get item by ID
-curl -X GET http://localhost:8080/items/{id} -->
+## Update an existing item (listID and itemID both 1 in example)
+curl -X PUT http://localhost:8080/lists/1/items/1 \
+  -H "Content-Type: application/json" \
+  -d "{\"name\": \"Eggs XL\", \"quantity\": 12}"
 
-## Update an existing item
-curl -X PUT http://localhost:8080/items/{id}
+## Delete an item (listID and itemID both 1 in example)
+curl -X DELETE http://localhost:8080/lists/1/items/1
 
-## Delete an item
-curl -X DELETE http://localhost:8080/items/{id}
-
-## Toggle an item as bought, or not
-curl -X PATCH http://localhost:8080/items/{id}/toggle
+## Toggle an item as bought / not bought (listID and itemID both 1 in example)
+curl -X PATCH http://localhost:8080/lists/1/items/1/toggle
 
 <!-- todo after mvp -->
 <!-- delete list endpoint -->
+<!-- get all lists -->

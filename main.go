@@ -115,22 +115,6 @@ func getItemsFromListHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "list not found", http.StatusNotFound)
 }
 
-// Commenting out, not needed
-// GET /items/{id} - get one item by ID
-// func getItemByIDHandler(w http.ResponseWriter, r *http.Request) {
-// 	vars := mux.Vars(r)
-// 	id := vars["id"]
-
-// 	for _, item := range items {
-// 		if item.ID == id {
-// 			w.Header().Set("Content-Type", "application/json")
-// 			json.NewEncoder(w).Encode(item)
-// 			return
-// 		}
-// 	}
-// 	http.Error(w, "item not found", http.StatusNotFound)
-// }
-
 // PUT /lists/{listID}/items/{itemID} - update item by ID in list
 func updateItemInListHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -221,7 +205,6 @@ func main() {
 
 	r.HandleFunc("/lists/{listID}/items", getItemsFromListHandler).Methods("GET")
 	r.HandleFunc("/lists/{listID}/items", addItemToListHandler).Methods("POST")
-	// r.HandleFunc("/items/{id}", getItemByIDHandler).Methods("GET")
 	r.HandleFunc("/lists/{listID}/items/{itemID}", updateItemInListHandler).Methods("PUT")
 	r.HandleFunc("/lists/{listID}/items/{itemID}", deleteItemInListHandler).Methods("DELETE")
 	r.HandleFunc("/lists/{listID}/items/{itemID}/toggle", toggleItemInListHandler).Methods("PATCH")
