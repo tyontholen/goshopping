@@ -62,6 +62,27 @@ func createListHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newList)
 }
 
+// GET /lists - get all lists
+func getAllListsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(lists)
+}
+
+// DELETE /lists/{listID} - delete a list and all its items by ID
+func deleteListHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	listID := vars["listID"]
+
+	for i, l := range lists {
+		if l.ID == listID {
+			lists = append(lists[:i], lists[i+1:]...)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+	}
+	http.Error(w, "list not found", http.StatusNotFound)
+}
+
 // POST /lists/{listID}/items - to add an item to a list
 func addItemToListHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -202,6 +223,8 @@ func main() {
 	r := mux.NewRouter()
 	//endpoints
 	r.HandleFunc("/list", createListHandler).Methods("POST")
+	r.HandleFunc("/lists", getAllListsHandler).Methods("GET")
+	r.HandleFunc("/lists/{listID}", deleteListHandler).Methods("DELETE")
 
 	r.HandleFunc("/lists/{listID}/items", getItemsFromListHandler).Methods("GET")
 	r.HandleFunc("/lists/{listID}/items", addItemToListHandler).Methods("POST")

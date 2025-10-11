@@ -23,6 +23,12 @@ curl -X POST http://localhost:8080/list \
   -H "Content-Type: application/json" \
   -d "{\"name\": \"Groceries\"}"
 
+## Get all lists
+curl -X GET http://localhost:8080/lists
+
+## Delete a list and all its items by ID (listID 1 in example)
+curl -X DELETE http://localhost:8080/lists/1
+
 ## Add a new item to a list by list ID (listID 1 in example)
 curl -X POST http://localhost:8080/lists/1/items \
   -H "Content-Type: application/json" \
