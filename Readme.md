@@ -22,14 +22,14 @@ Special effects when special groceries are checked done, like potato chips
 ## Create a new shopping list
 curl -X POST http://localhost:8080/list
 
-## Add a new item
-curl -X POST http://localhost:8080/items
+## Add a new item to a list by list ID
+curl -X POST http://localhost:8080/lists/{listID}/items
 
-## Get all items
-curl -X GET http://localhost:8080/items
+## Get all items from a list by list ID
+curl -X GET http://localhost:8080/lists/{listID}/items
 
-## Get item by ID
-curl -X GET http://localhost:8080/items/{id}
+<!-- ## Get item by ID
+curl -X GET http://localhost:8080/items/{id} -->
 
 ## Update an existing item
 curl -X PUT http://localhost:8080/items/{id}
@@ -39,3 +39,6 @@ curl -X DELETE http://localhost:8080/items/{id}
 
 ## Toggle an item as bought, or not
 curl -X PATCH http://localhost:8080/items/{id}/toggle
+
+<!-- todo after mvp -->
+<!-- delete list endpoint -->

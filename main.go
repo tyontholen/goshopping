@@ -99,83 +99,119 @@ func addItemToListHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "list not found", http.StatusNotFound)
 }
 
-// todo: update get endpoint to get all items for list by ID
-// GET /items - get all items of a list
-func getItemsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
-}
-
-// GET /items/{id} - get one item by ID
-func getItemByIDHandler(w http.ResponseWriter, r *http.Request) {
+// GET /lists/{listID}/items - get all items of a list
+func getItemsFromListHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
+	listID := vars["listID"]
 
-	for _, item := range items {
-		if item.ID == id {
+	for _, l := range lists {
+		if l.ID == listID {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(item)
+			json.NewEncoder(w).Encode(l.Items)
 			return
 		}
 	}
-	http.Error(w, "item not found", http.StatusNotFound)
+
+	http.Error(w, "list not found", http.StatusNotFound)
 }
 
-// PUT /items/{id} - update item by ID
-func updateItemHandler(w http.ResponseWriter, r *http.Request) {
+// Commenting out, not needed
+// GET /items/{id} - get one item by ID
+// func getItemByIDHandler(w http.ResponseWriter, r *http.Request) {
+// 	vars := mux.Vars(r)
+// 	id := vars["id"]
+
+// 	for _, item := range items {
+// 		if item.ID == id {
+// 			w.Header().Set("Content-Type", "application/json")
+// 			json.NewEncoder(w).Encode(item)
+// 			return
+// 		}
+// 	}
+// 	http.Error(w, "item not found", http.StatusNotFound)
+// }
+
+// PUT /lists/{listID}/items/{itemID} - update item by ID in list
+func updateItemInListHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
+	listID := vars["listID"]
+	itemID := vars["itemID"]
 
 	var updated Item
-	err := json.NewDecoder(r.Body).Decode(&updated)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&updated); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	for i, item := range items {
-		if item.ID == id {
-			items[i].Name = updated.Name
-			items[i].Quantity = updated.Quantity
-			items[i].Section = updated.Section
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(items[i])
+	for li, l := range lists {
+		if l.ID == listID {
+			for i, item := range l.Items {
+				if item.ID == itemID {
+					// update allowed fields
+					if updated.Name != "" {
+						lists[li].Items[i].Name = updated.Name
+					}
+					if updated.Section != "" {
+						lists[li].Items[i].Section = updated.Section
+					}
+					if updated.Quantity > 0 {
+						lists[li].Items[i].Quantity = updated.Quantity
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(lists[li].Items[i])
+					return
+				}
+			}
+			http.Error(w, "item not found", http.StatusNotFound)
 			return
 		}
 	}
-	http.Error(w, "item not found", http.StatusNotFound)
+	http.Error(w, "list not found", http.StatusNotFound)
 }
 
-// DELETE /items/{id} - delete an item by ID
-func deleteItemHandler(w http.ResponseWriter, r *http.Request) {
+// DELETE /lists{listID}/items/{itemID} - delete an item by ID
+func deleteItemInListHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
+	listID := vars["listID"]
+	itemID := vars["itemID"]
 
-	for i, item := range items {
-		if item.ID == id {
-			items = append(items[:i], items[i+1:]...)
-			w.WriteHeader(http.StatusNoContent)
+	for li, l := range lists {
+		if l.ID == listID {
+			for i, item := range l.Items {
+				if item.ID == itemID {
+					lists[li].Items = append(l.Items[:i], l.Items[i+1:]...)
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
+			}
+			http.Error(w, "item not found", http.StatusNotFound)
 			return
 		}
 	}
-	http.Error(w, "item not found", http.StatusNotFound)
+	http.Error(w, "list not found", http.StatusNotFound)
 }
 
-// PATCH /items/{id}/toggle - toggle bought status by ID
-func toggleItemHandler(w http.ResponseWriter, r *http.Request) {
+// PATCH /lists{listID}/items/{itemID}/toggle - toggle bought status by ID
+func toggleItemInListHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
+	listID := vars["listID"]
+	itemID := vars["itemID"]
 
-	for i, item := range items {
-		if item.ID == id {
-			items[i].Bought = !item.Bought
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(items[i])
-			return
+	for li, l := range lists {
+		if l.ID == listID {
+			for i, item := range l.Items {
+				if item.ID == itemID {
+					lists[li].Items[i].Bought = !item.Bought
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(lists[li].Items[i])
+					return
+				}
+			}
+			http.Error(w, "item not found", http.StatusNotFound)
 		}
 	}
-	http.Error(w, "item not found", http.StatusNotFound)
-
+	http.Error(w, "list not found", http.StatusNotFound)
 }
 
 func main() {
@@ -183,12 +219,12 @@ func main() {
 	//endpoints
 	r.HandleFunc("/list", createListHandler).Methods("POST")
 
-	r.HandleFunc("/items", getItemsHandler).Methods("GET")
-	r.HandleFunc("/items", addItemHandler).Methods("POST")
-	r.HandleFunc("/items/{id}", getItemByIDHandler).Methods("GET")
-	r.HandleFunc("/items/{id}", updateItemHandler).Methods("PUT")
-	r.HandleFunc("/items/{id}", deleteItemHandler).Methods("DELETE")
-	r.HandleFunc("/items/{id}/toggle", toggleItemHandler).Methods("PATCH")
+	r.HandleFunc("/lists/{listID}/items", getItemsFromListHandler).Methods("GET")
+	r.HandleFunc("/lists/{listID}/items", addItemToListHandler).Methods("POST")
+	// r.HandleFunc("/items/{id}", getItemByIDHandler).Methods("GET")
+	r.HandleFunc("/lists/{listID}/items/{itemID}", updateItemInListHandler).Methods("PUT")
+	r.HandleFunc("/lists/{listID}/items/{itemID}", deleteItemInListHandler).Methods("DELETE")
+	r.HandleFunc("/lists/{listID}/items/{itemID}/toggle", toggleItemInListHandler).Methods("PATCH")
 
 	fmt.Println("Server running on: http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
