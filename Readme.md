@@ -48,6 +48,6 @@ curl -X DELETE http://localhost:8080/lists/1/items/1
 ## Toggle an item as bought / not bought (listID and itemID both 1 in example)
 curl -X PATCH http://localhost:8080/lists/1/items/1/toggle
 
-<!-- todo after mvp -->
-<!-- delete list endpoint -->
-<!-- get all lists -->
+<!-- todo:
+    Initial frontend
+ -->
