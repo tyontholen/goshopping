@@ -10,6 +10,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// todo: cors
+
 // Data structs for Items and List
 
 type Item struct {
