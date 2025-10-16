@@ -14,6 +14,18 @@ const ListsPage: React.FC = () => {
   const [lists, setLists] = useState<ListType[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchLists = async () => {
+    try {
+      const res = await api.get("/lists");
+      setLists(res.data.lists || []);
+    } catch (err) {
+      console.error("Error fetching lists:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   useEffect(() => {
     api
       .get("/lists")
@@ -23,6 +35,10 @@ const ListsPage: React.FC = () => {
       })
       .catch((err) => console.error("Error fetching lists:", err))
       .finally(() => setLoading(false));
+
+      fetchLists();
+      const interval = setInterval(fetchLists, 300); // every 0,3 seconds
+      return () => clearInterval(interval); 
   }, []);
 
   if (loading) return <CircularProgress />;
