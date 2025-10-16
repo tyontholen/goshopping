@@ -8,9 +8,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
-
-// todo: cors
 
 // Data structs for Items and List
 
@@ -267,6 +266,14 @@ func main() {
 	r.HandleFunc("/lists/{listID}/items/{itemID}", deleteItemInListHandler).Methods("DELETE")
 	r.HandleFunc("/lists/{listID}/items/{itemID}/toggle", toggleItemInListHandler).Methods("PATCH")
 
+	// CORS middleware
+	handler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+	}).Handler(r)
+
 	fmt.Println("Server running on: http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":8080", handler))
 }
