@@ -6,6 +6,7 @@ import {
   Typography,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   CircularProgress,
   Button,
@@ -17,6 +18,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { Link } from "react-router-dom";
 
 const ListsPage: React.FC = () => {
   const [lists, setLists] = useState<ListType[]>([]);
@@ -88,11 +90,13 @@ const ListsPage: React.FC = () => {
           <Typography>No lists found.</Typography>
         ) : (
           lists.map((list) => (
-            <ListItem key={list.id} divider>
-              <ListItemText
-                primary={list.name}
-                secondary={`List ID: ${list.id}`}
-              />
+            <ListItem key={list.id} divider disablePadding>
+              <ListItemButton component={Link} to={`/lists/${list.id}`}>
+                <ListItemText
+                  primary={list.name}
+                  secondary={`List ID: ${list.id}`}
+                />
+              </ListItemButton>
             </ListItem>
           ))
         )}
