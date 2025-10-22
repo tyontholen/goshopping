@@ -157,7 +157,7 @@ const ListDetailsPage: React.FC = () => {
                   <>
                     <IconButton
                       edge="end"
-                      color="primary"
+                      color="inherit"
                       onClick={() => {
                         setEditItem(item);
                         setEditOpen(true);

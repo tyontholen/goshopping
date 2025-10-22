@@ -3,15 +3,19 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ListsPage from "./pages/ListsPage";
 import ListDetailsPage from "./pages/ListDetailsPage";
-import "./index.css";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import { themeOptions } from "./theme";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ListsPage />} />
-        <Route path="/lists/:id" element={<ListDetailsPage />} />
-      </Routes>
-    </BrowserRouter>
+    <ThemeProvider theme={themeOptions}>
+      <CssBaseline /> {/* ensures dark background and text styles apply */}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<ListsPage />} />
+          <Route path="/lists/:id" element={<ListDetailsPage />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   </React.StrictMode>
 );
