@@ -31,11 +31,17 @@ interface Item {
 }
 
 const ListDetailsPage: React.FC = () => {
+  const SECTIONS = ["Dairy", "Meat", "Vegetables", "Bakery", "Drinks", "Other"];
+  const DEFAULT_SECTION = "Other";
   const { id } = useParams<{ id: string }>();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [newItem, setNewItem] = useState({ name: "", quantity: 1 });
+  const [newItem, setNewItem] = useState({
+    name: "",
+    quantity: 1,
+    section: DEFAULT_SECTION,
+  });
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({
     open: false,
     message: "",
@@ -63,7 +69,7 @@ const ListDetailsPage: React.FC = () => {
     try {
       await api.post(`/lists/${id}/items`, newItem);
       setSnackbar({ open: true, message: "Item added!" });
-      setNewItem({ name: "", quantity: 1 });
+      setNewItem({ name: "", quantity: 1, section: "Other" });
       setOpen(false);
       fetchItems();
     } catch (err) {
@@ -128,7 +134,6 @@ const ListDetailsPage: React.FC = () => {
         + Add Item
       </Button>
 
-
       <Button
         variant="outlined"
         color="secondary"
@@ -142,45 +147,49 @@ const ListDetailsPage: React.FC = () => {
         <Typography>No items found. Add one!</Typography>
       ) : (
         <List>
-          {items.map((item) => (
-            <ListItem
-              key={item.id}
-              divider
-              secondaryAction={
-                <>
-                  <IconButton
-                    edge="end"
-                    color="primary"
-                    onClick={() => {
-                      setEditItem(item);
-                      setEditOpen(true);
-                    }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    edge="end"
-                    color="success"
-                    onClick={() => handleToggleBought(item.id)}
-                  >
-                    <CheckIcon />
-                  </IconButton>
-                  <IconButton
-                    edge="end"
-                    color="error"
-                    onClick={() => handleDelete(item.id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </>
-              }
-            >
-              <ListItemText
-                primary={`${item.name} (${item.quantity})`}
-                secondary={item.bought ? "✅ Bought" : "🛒 Not bought"}
-              />
-            </ListItem>
-          ))}
+          {[...items]
+            .sort((a, b) => (a.section || "").localeCompare(b.section || ""))
+            .map((item) => (
+              <ListItem
+                key={item.id}
+                divider
+                secondaryAction={
+                  <>
+                    <IconButton
+                      edge="end"
+                      color="primary"
+                      onClick={() => {
+                        setEditItem(item);
+                        setEditOpen(true);
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      color="success"
+                      onClick={() => handleToggleBought(item.id)}
+                    >
+                      <CheckIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      color="error"
+                      onClick={() => handleDelete(item.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </>
+                }
+              >
+                <ListItemText
+                  primary={`${item.name} (${item.quantity})`}
+                  secondary={`${item.section || DEFAULT_SECTION} — ${
+                    item.bought ? "✅ Bought" : "🛒 Not bought"
+                  }`}
+                />
+              </ListItem>
+            ))}
         </List>
       )}
 
@@ -205,6 +214,23 @@ const ListDetailsPage: React.FC = () => {
               setNewItem({ ...newItem, quantity: Number(e.target.value) })
             }
           />
+          <TextField
+            select
+            label="Section"
+            fullWidth
+            margin="dense"
+            value={newItem.section}
+            onChange={(e) =>
+              setNewItem({ ...newItem, section: e.target.value })
+            }
+            SelectProps={{ native: true }}
+          >
+            {SECTIONS.map((section) => (
+              <option key={section} value={section}>
+                {section}
+              </option>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
@@ -214,6 +240,7 @@ const ListDetailsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Edit item dialog */}
       {/* Edit item dialog */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)}>
         <DialogTitle>Edit Item</DialogTitle>
@@ -237,6 +264,23 @@ const ListDetailsPage: React.FC = () => {
               setEditItem({ ...editItem!, quantity: Number(e.target.value) })
             }
           />
+          <TextField
+            select
+            label="Section"
+            fullWidth
+            margin="dense"
+            value={editItem?.section || DEFAULT_SECTION}
+            onChange={(e) =>
+              setEditItem({ ...editItem!, section: e.target.value })
+            }
+            SelectProps={{ native: true }}
+          >
+            {SECTIONS.map((section) => (
+              <option key={section} value={section}>
+                {section}
+              </option>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditOpen(false)}>Cancel</Button>
