@@ -51,3 +51,9 @@ curl -X PATCH http://localhost:8080/lists/1/items/1/toggle
 <!-- todo:
     Initial frontend
  -->
+ <!-- todo:
+ initial mongodb
+  -->
+  <!-- todo:
+  easter eggs
+   -->

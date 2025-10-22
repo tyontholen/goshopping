@@ -30,8 +30,11 @@ interface Item {
   bought: boolean;
 }
 
+// todo: style up with container, touchup sections, positioning of buttons
+// todo: refactor parts of code to components
+
 const ListDetailsPage: React.FC = () => {
-  const SECTIONS = ["Dairy", "Meat", "Vegetables", "Bakery", "Drinks", "Other"];
+  const SECTIONS = ["Dairy", "Meat", "Vegetables 🥕", "Bakery", "Drinks", "Other"];
   const DEFAULT_SECTION = "Other";
   const { id } = useParams<{ id: string }>();
   const [items, setItems] = useState<Item[]>([]);
