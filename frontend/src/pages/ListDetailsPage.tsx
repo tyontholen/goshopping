@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../api/api";
 import {
+  Box,
   Container,
   Typography,
   List,
@@ -34,7 +35,14 @@ interface Item {
 // todo: refactor parts of code to components
 
 const ListDetailsPage: React.FC = () => {
-  const SECTIONS = ["Dairy", "Meat", "Vegetables 🥕", "Bakery", "Drinks", "Other"];
+  const SECTIONS = [
+    "Dairy",
+    "Meat",
+    "Vegetables 🥕",
+    "Bakery",
+    "Drinks",
+    "Other",
+  ];
   const DEFAULT_SECTION = "Other";
   const { id } = useParams<{ id: string }>();
   const [items, setItems] = useState<Item[]>([]);
@@ -51,6 +59,7 @@ const ListDetailsPage: React.FC = () => {
   });
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<Item | null>(null);
+  const [listName, setListName] = useState<string>("");
 
   const fetchItems = async () => {
     try {
@@ -66,6 +75,25 @@ const ListDetailsPage: React.FC = () => {
   useEffect(() => {
     fetchItems();
   }, [id]);
+
+  useEffect(() => {
+  const fetchListData = async () => {
+    try {
+      const [listRes, itemsRes] = await Promise.all([
+        api.get(`/lists/${id}`),
+        api.get(`/lists/${id}/items`)
+      ]);
+      setListName(listRes.data.name);
+      setItems(itemsRes.data.items || []);
+    } catch (err) {
+      console.error("Error fetching list details:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchListData();
+}, [id]);
 
   const handleAddItem = async () => {
     if (!newItem.name.trim()) return;
@@ -125,31 +153,61 @@ const ListDetailsPage: React.FC = () => {
   if (loading) return <CircularProgress />;
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        🛍️ List Details
-      </Typography>
-      <Button component={Link} to="/" variant="outlined" sx={{ mb: 2 }}>
-        ← Back to all lists
-      </Button>
-
-      <Button variant="contained" onClick={() => setOpen(true)} sx={{ mb: 2 }}>
-        + Add Item
-      </Button>
-
-      <Button
-        variant="outlined"
-        color="secondary"
-        onClick={handleClearBought}
-        sx={{ ml: 2, mb: 2 }}
+    <Container
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        textAlign: "center",
+      }}
+    >
+      <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
+  {listName}
+</Typography>
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 600,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 4,
+          
+        }}
       >
-        🧹 Clear Bought Items
-      </Button>
+        <Button component={Link} to="/" variant="outlined" sx={{ mb: 2 }}>
+           Back to all lists
+        </Button>
+
+        <Button
+          variant="contained"
+          onClick={() => setOpen(true)}
+          sx={{ mb: 2 }}
+        >
+          + Add Item
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={handleClearBought}
+          sx={{ ml: 2, mb: 2 }}
+        >
+          Delete bought items
+        </Button>
+      </Box>
 
       {items.length === 0 ? (
         <Typography>No items found. Add one!</Typography>
       ) : (
-        <List>
+        <List
+          sx={{
+            width: "100%",
+            maxWidth: 600,
+          }}
+        >
           {[...items]
             .sort((a, b) => (a.section || "").localeCompare(b.section || ""))
             .map((item) => (
@@ -243,7 +301,6 @@ const ListDetailsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Edit item dialog */}
       {/* Edit item dialog */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)}>
         <DialogTitle>Edit Item</DialogTitle>

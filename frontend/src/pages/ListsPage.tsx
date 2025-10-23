@@ -71,7 +71,17 @@ const ListsPage: React.FC = () => {
   if (loading) return <CircularProgress />;
 
   return (
-    <Container sx={{ mt: 4 }}>
+    <Container
+      sx={{
+        mt: 4,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        textAlign: "center",
+      }}
+    >
       <Typography variant="h4" gutterBottom>
         🛒 Available Lists
       </Typography>
@@ -91,7 +101,11 @@ const ListsPage: React.FC = () => {
         ) : (
           lists.map((list) => (
             <ListItem key={list.id} divider disablePadding>
-              <ListItemButton component={Link} to={`/lists/${list.id}`}>
+              <ListItemButton
+                component={Link}
+                to={`/lists/${list.id}`}
+                state={{ name: list.name }} // ✅ Pass name via route state
+              >
                 <ListItemText
                   primary={list.name}
                   secondary={`List ID: ${list.id}`}
@@ -119,7 +133,11 @@ const ListsPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreateList} variant="contained" color="primary">
+          <Button
+            onClick={handleCreateList}
+            variant="contained"
+            color="primary"
+          >
             Create
           </Button>
         </DialogActions>
