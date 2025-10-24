@@ -61,6 +61,13 @@ const ListDetailsPage: React.FC = () => {
     quantity: 1,
     section: DEFAULT_SECTION,
   });
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({
+    open: false,
+    message: "",
+  });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editItem, setEditItem] = useState<Item | null>(null);
+  const [listName, setListName] = useState<string>("");
 
   // ✅ Unified fetch for both list name and items
   const fetchListData = async () => {
@@ -85,7 +92,25 @@ const ListDetailsPage: React.FC = () => {
     fetchListData();
   }, [id]);
 
-  // --- CRUD Handlers ---
+  useEffect(() => {
+  const fetchListData = async () => {
+    try {
+      const [listRes, itemsRes] = await Promise.all([
+        api.get(`/lists/${id}`),
+        api.get(`/lists/${id}/items`)
+      ]);
+      setListName(listRes.data.name);
+      setItems(itemsRes.data.items || []);
+    } catch (err) {
+      console.error("Error fetching list details:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchListData();
+}, [id]);
+
   const handleAddItem = async () => {
     if (!newItem.name.trim()) return;
     try {
@@ -139,7 +164,13 @@ const ListDetailsPage: React.FC = () => {
     }
   };
 
-  if (loading) return <CircularProgress />;
+  if (loading) {
+  return (
+    <Container sx={{ textAlign: "center", mt: 10 }}>
+      <CircularProgress />
+    </Container>
+  );
+}
 
   return (
     <Container
@@ -152,12 +183,9 @@ const ListDetailsPage: React.FC = () => {
         textAlign: "center",
       }}
     >
-      {/* ✅ List name */}
       <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
-        🛍️ {listName || "List Details"}
-      </Typography>
-
-      {/* ✅ Control buttons */}
+  {listName}
+</Typography>
       <Box
         sx={{
           width: "100%",
@@ -166,10 +194,11 @@ const ListDetailsPage: React.FC = () => {
           justifyContent: "space-between",
           alignItems: "center",
           mb: 4,
+          
         }}
       >
         <Button component={Link} to="/" variant="outlined" sx={{ mb: 2 }}>
-          Back to all lists
+           Back to all lists
         </Button>
 
         <Button
@@ -179,6 +208,16 @@ const ListDetailsPage: React.FC = () => {
         >
           + Add Item
         </Button>
+
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={handleClearBought}
+          sx={{ ml: 2, mb: 2 }}
+        >
+          Delete bought items
+        </Button>
+      </Box>
 
         <Button
           variant="outlined"
