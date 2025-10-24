@@ -57,3 +57,6 @@ curl -X PATCH http://localhost:8080/lists/1/items/1/toggle
   <!-- todo:
   easter eggs
    -->
+   <!-- todo:
+   enter to submit items, refactor detailspage to components
+    -->
