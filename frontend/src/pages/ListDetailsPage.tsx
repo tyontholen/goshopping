@@ -150,7 +150,13 @@ const ListDetailsPage: React.FC = () => {
     }
   };
 
-  if (loading) return <CircularProgress />;
+  if (loading) {
+  return (
+    <Container sx={{ textAlign: "center", mt: 10 }}>
+      <CircularProgress />
+    </Container>
+  );
+}
 
   return (
     <Container

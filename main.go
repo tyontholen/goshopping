@@ -84,6 +84,21 @@ func getAllListsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GET /lists/{listID} - get list details by ID
+func getListByIDHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	listID := vars["listID"]
+
+	for _, l := range lists {
+		if l.ID == listID {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(l)
+			return
+		}
+	}
+	http.Error(w, "list not found", http.StatusNotFound)
+}
+
 // DELETE /lists/{listID} - delete a list and all its items by ID
 func deleteListHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -258,6 +273,7 @@ func main() {
 	//endpoints
 	r.HandleFunc("/list", createListHandler).Methods("POST")
 	r.HandleFunc("/lists", getAllListsHandler).Methods("GET")
+	r.HandleFunc("/lists/{listID}", getListByIDHandler).Methods("GET")
 	r.HandleFunc("/lists/{listID}", deleteListHandler).Methods("DELETE")
 
 	r.HandleFunc("/lists/{listID}/items", getItemsFromListHandler).Methods("GET")
