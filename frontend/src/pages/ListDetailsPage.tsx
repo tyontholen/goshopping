@@ -20,6 +20,7 @@ import {
   Alert,
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
+
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 
@@ -32,7 +33,25 @@ interface Item {
 }
 
 const ListDetailsPage: React.FC = () => {
-  const SECTIONS = ["Dairy", "Meat", "Vegetables 🥕", "Bakery", "Drinks", "Other"];
+  const SECTIONS = [
+    "Dairy 🥛",
+    "Cheese 🧀",
+    "Meat 🍗",
+    "Vegetables 🥕",
+    "Sauces 🍼", 
+    "Bread 🍞",
+    "Drinks 🥤",
+    "Canned food 🥫",
+    "Freezer ❄",
+    "Snacks 🍿",
+    "Toppings 🌭",
+    "Thai 🍜",
+    "Pasta & Rice 🍝🍚",
+    "Taco 🌮",
+    "Spices 🧂",
+    "Nuts 🥜",
+    "Other",
+  ];
   const DEFAULT_SECTION = "Other";
 
   const { id } = useParams<{ id: string }>();
@@ -46,6 +65,12 @@ const ListDetailsPage: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<Item | null>(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmInput, setConfirmInput] = useState("");
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
 
   const [newItem, setNewItem] = useState({
     name: "",
@@ -180,7 +205,20 @@ const ListDetailsPage: React.FC = () => {
           + Add Item
         </Button>
 
-        <Button variant="outlined" color="secondary" onClick={handleClearBought}>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={() => {
+            if (items.some((item) => item.bought)) {
+              setConfirmOpen(true);
+            } else {
+              setSnackbar({
+                open: true,
+                message: "No bought items to remove!",
+              });
+            }
+          }}
+        >
           Delete bought items
         </Button>
       </Box>
@@ -191,46 +229,72 @@ const ListDetailsPage: React.FC = () => {
       ) : (
         <List sx={{ width: "100%", maxWidth: 600 }}>
           {[...items]
-            .sort((a, b) => (a.section || "").localeCompare(b.section || ""))
+            .sort((a, b) => {
+              // 1️⃣ Unbought items first
+              if (a.bought !== b.bought) return a.bought ? 1 : -1;
+
+              // 2️⃣ Within the same bought state, sort by section
+              return (a.section || "").localeCompare(b.section || "");
+            })
             .map((item) => (
               <ListItem
                 key={item.id}
                 divider
-                secondaryAction={
-                  <>
-                    <IconButton
-                      edge="end"
-                      color="inherit"
-                      onClick={() => {
-                        setEditItem(item);
-                        setEditOpen(true);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      color="success"
-                      onClick={() => handleToggleBought(item.id)}
-                    >
-                      <CheckIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      color="error"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </>
-                }
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  bgcolor: "background.paper", // uses your #121212
+                  borderRadius: 2,
+                  mb: 1,
+                  px: 2,
+                  "&:hover": {
+                    bgcolor: "#1a1a1a",
+                  },
+                }}
               >
-                <ListItemText
-                  primary={`${item.name} (${item.quantity})`}
-                  secondary={`${item.section || DEFAULT_SECTION} — ${
-                    item.bought ? "✅ Bought" : "🛒 Not bought"
-                  }`}
-                />
+                {/* Left side: checkmark and text */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <CheckIcon
+                    onClick={() => handleToggleBought(item.id)}
+                    sx={{
+                      cursor: "pointer",
+                      color: item.bought ? "#1bd760" : "#535353", // Spotify green or medium gray
+                      transition: "color 0.2s ease",
+                      "&:hover": {
+                        color: item.bought ? "#1ed760" : "#b3b3b3", // lighter green / gray on hover
+                      },
+                    }}
+                  />
+                  <ListItemText
+                    primary={item.name}
+                    secondary={`${item.section || DEFAULT_SECTION} — ${
+                      item.bought ? "Bought" : "Not bought"
+                    }`}
+                  />
+                </Box>
+
+                {/* Right side: edit + delete */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <IconButton
+                    color="inherit"
+                    onClick={() => {
+                      setEditItem(item);
+                      setEditOpen(true);
+                    }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    color="error"
+                    onClick={() => {
+                      setItemToDelete(item);
+                      setDeleteConfirmOpen(true);
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
               </ListItem>
             ))}
         </List>
@@ -292,7 +356,9 @@ const ListDetailsPage: React.FC = () => {
             fullWidth
             margin="dense"
             value={editItem?.name || ""}
-            onChange={(e) => setEditItem({ ...editItem!, name: e.target.value })}
+            onChange={(e) =>
+              setEditItem({ ...editItem!, name: e.target.value })
+            }
           />
           <TextField
             label="Quantity"
@@ -345,6 +411,70 @@ const ListDetailsPage: React.FC = () => {
             }}
           >
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirm delete bought items dialog */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>Delete All Bought Items</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            ⚠️ This will permanently delete all items marked as <b>“Bought”</b>.
+            <br />
+            To confirm, type <b>"yes"</b> below.
+          </Typography>
+          <TextField
+            label="Type 'yes' to confirm"
+            fullWidth
+            value={confirmInput}
+            onChange={(e) => setConfirmInput(e.target.value)}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={confirmInput.toLowerCase() !== "yes"}
+            onClick={async () => {
+              await handleClearBought();
+              setConfirmInput("");
+              setConfirmOpen(false);
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirm delete single item */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+      >
+        <DialogTitle>Delete Item</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1 }}>
+            Are you sure you want to delete{" "}
+            <b>{itemToDelete?.name || "this item"}</b>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={async () => {
+              if (itemToDelete) {
+                await handleDelete(itemToDelete.id);
+              }
+              setItemToDelete(null);
+              setDeleteConfirmOpen(false);
+            }}
+          >
+            Yes, delete
           </Button>
         </DialogActions>
       </Dialog>

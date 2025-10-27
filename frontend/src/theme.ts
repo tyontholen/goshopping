@@ -4,9 +4,17 @@ import { createTheme } from "@mui/material";
 export const themeOptions = createTheme({
   palette: {
     primary: {
-      main: "#1bd760",
+      main: "#1bd760", // Spotify green
       light: "#39d472",
       dark: "#3b5249",
+      contrastText: "#ffffff",
+    },
+    secondary: {
+      main: "#b3b3b3", // neutral gray
+      contrastText: "#ffffff",
+    },
+    error: {
+      main: "#e91429", // Spotify red for destructive actions
       contrastText: "#ffffff",
     },
     background: {
