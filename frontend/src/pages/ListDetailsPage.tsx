@@ -23,6 +23,10 @@ import CheckIcon from "@mui/icons-material/Check";
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import Slide from "@mui/material/Slide";
+import { TransitionProps } from "@mui/material/transitions";
+
+
 
 interface Item {
   id: string;
@@ -43,7 +47,7 @@ const ListDetailsPage: React.FC = () => {
     "Cheese 🧀",
     "Meat 🍗",
     "Toppings 🌭",
-    "Sauces 🍼", 
+    "Sauces 🍼",
     "Spices 🧂",
     "Bread 🍞",
     "Dairy 🥛",
@@ -78,6 +82,20 @@ const ListDetailsPage: React.FC = () => {
     quantity: 1,
     section: DEFAULT_SECTION,
   });
+
+  const Transition = React.forwardRef(function Transition(
+  props: TransitionProps & { children: React.ReactElement<any, any> },
+  ref: React.Ref<unknown>
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
+const handleCloseEditDialog = () => {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur(); // remove focus
+  }
+  setEditOpen(false);
+};
 
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({
     open: false,
@@ -348,73 +366,124 @@ const ListDetailsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+
       {/* Edit item dialog */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)}>
-        <DialogTitle>Edit Item</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Item name"
-            fullWidth
-            margin="dense"
-            value={editItem?.name || ""}
-            onChange={(e) =>
-              setEditItem({ ...editItem!, name: e.target.value })
-            }
-          />
-          <TextField
-            label="Quantity"
-            type="number"
-            fullWidth
-            margin="dense"
-            value={editItem?.quantity || 1}
-            onChange={(e) =>
-              setEditItem({ ...editItem!, quantity: Number(e.target.value) })
-            }
-          />
-          <TextField
-            select
-            label="Section"
-            fullWidth
-            margin="dense"
-            value={editItem?.section || DEFAULT_SECTION}
-            onChange={(e) =>
-              setEditItem({ ...editItem!, section: e.target.value })
-            }
-            SelectProps={{ native: true }}
-          >
-            {SECTIONS.map((section) => (
-              <option key={section} value={section}>
-                {section}
-              </option>
-            ))}
-          </TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={async () => {
-              if (!editItem) return;
-              try {
-                await api.put(`/lists/${id}/items/${editItem.id}`, editItem);
-                setItems((prev) =>
-                  prev.map((i) => (i.id === editItem.id ? editItem : i))
-                );
-                setSnackbar({ open: true, message: "Item updated!" });
-                setEditOpen(false);
-              } catch (err) {
-                console.error("Error updating item:", err);
-                setSnackbar({
-                  open: true,
-                  message: "Failed to update item.",
-                });
-              }
-            }}
-          >
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+{/* Edit item dialog */}
+<Dialog
+  open={editOpen}
+  onClose={handleCloseEditDialog}
+  TransitionComponent={Transition}
+  disableEnforceFocus
+  PaperProps={{
+    sx: {
+      bgcolor: "#121212",
+      color: "#fff",
+      borderRadius: 3,
+      p: 3,               // more padding inside dialog
+      minWidth: 400,      // wider to fit labels
+      maxWidth: "90%",
+      minHeight: 380,     // taller so fields aren’t squished
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+    },
+  }}
+>
+  <DialogTitle sx={{ fontSize: 20 }}>Edit Item</DialogTitle>
+
+  <DialogContent
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 3,            // more space between fields
+      mt: 1,
+    }}
+  >
+   <TextField
+  label="Item name"
+  fullWidth
+  variant="outlined"
+  value={editItem?.name || ""}
+  onChange={(e) => setEditItem({ ...editItem!, name: e.target.value })}
+  InputLabelProps={{ shrink: true }}
+  margin="normal"       // use "normal" instead of "dense"
+  sx={{
+    input: { color: "#fff", padding: "10px 12px" },  // more vertical padding
+  }}
+/>
+    <TextField
+      label="Quantity"
+      type="number"
+      fullWidth
+      variant="outlined"
+      value={editItem?.quantity || 1}
+      onChange={(e) =>
+        setEditItem({ ...editItem!, quantity: Number(e.target.value) })
+      }
+      InputLabelProps={{ shrink: true }}
+    />
+    <TextField
+      select
+      label="Section"
+      fullWidth
+      variant="outlined"
+      value={editItem?.section || DEFAULT_SECTION}
+      onChange={(e) =>
+        setEditItem({ ...editItem!, section: e.target.value })
+      }
+      SelectProps={{ native: true }}
+      InputLabelProps={{ shrink: true }}
+    >
+      {SECTIONS.map((section) => (
+        <option key={section} value={section}>
+          {section}
+        </option>
+      ))}
+    </TextField>
+  </DialogContent>
+
+  <DialogActions
+    sx={{
+      justifyContent: "center",
+      mt: 3,
+      pb: 3,
+      gap: 2,
+    }}
+  >
+    <Button
+      onClick={() => setEditOpen(false)}
+      variant="outlined"
+      sx={{ minWidth: 100 }}
+    >
+      Cancel
+    </Button>
+    <Button
+      variant="contained"
+      sx={{
+        minWidth: 120,
+        fontWeight: 600,
+        bgcolor: "#1bd760",
+        "&:hover": { bgcolor: "#1ed760" },
+      }}
+      onClick={async () => {
+        if (!editItem) return;
+        try {
+          await api.put(`/lists/${id}/items/${editItem.id}`, editItem);
+          setItems((prev) =>
+            prev.map((i) => (i.id === editItem.id ? editItem : i))
+          );
+          setSnackbar({ open: true, message: "Item updated!" });
+          setEditOpen(false);
+        } catch (err) {
+          console.error("Error updating item:", err);
+          setSnackbar({ open: true, message: "Failed to update item." });
+        }
+      }}
+    >
+      Save Changes
+    </Button>
+  </DialogActions>
+</Dialog>
 
       {/* Confirm delete bought items dialog */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
