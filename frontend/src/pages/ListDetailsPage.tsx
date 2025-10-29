@@ -9,7 +9,6 @@ import {
   ListItem,
   ListItemText,
   Button,
-  Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -20,14 +19,74 @@ import {
   Alert,
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
-
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import Dialog from "@mui/material/Dialog";
 import Slide from "@mui/material/Slide";
 import { TransitionProps } from "@mui/material/transitions";
 
+// ✅ Reusable DialogWrapper to prevent stuck overlays or focus lock issues
+const SlideUp = React.forwardRef(function SlideUp(
+  props: TransitionProps & { children: React.ReactElement<any, any> },
+  ref: React.Ref<unknown>
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
+function DialogWrapper({
+  open,
+  onClose,
+  children,
+  paperSx,
+  keepMounted = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  paperSx?: any;
+  keepMounted?: boolean;
+}) {
+  const handleClose = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    onClose();
+  };
 
+  const cleanupPortals = () => {
+    // Fix stuck aria-hidden/focus issues from rapid dialog toggles
+    document.querySelectorAll('[aria-hidden="true"]').forEach((el) => {
+      el.removeAttribute("aria-hidden");
+    });
+    document.querySelectorAll(".MuiBackdrop-root").forEach((b) => {
+      (b as HTMLElement).parentElement?.removeChild(b);
+    });
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      TransitionComponent={SlideUp}
+      closeAfterTransition
+      keepMounted={keepMounted}
+      onExited={cleanupPortals}
+      PaperProps={{
+        sx: {
+          bgcolor: "#121212",
+          color: "#fff",
+          borderRadius: 3,
+          p: 3,
+          ...(paperSx || {}),
+        },
+      }}
+    >
+      {children}
+    </Dialog>
+  );
+}
+
+// ✅ Item interface
 interface Item {
   id: string;
   name: string;
@@ -83,33 +142,16 @@ const ListDetailsPage: React.FC = () => {
     section: DEFAULT_SECTION,
   });
 
-  const Transition = React.forwardRef(function Transition(
-  props: TransitionProps & { children: React.ReactElement<any, any> },
-  ref: React.Ref<unknown>
-) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>(
+    { open: false, message: "" }
+  );
 
-const handleCloseEditDialog = () => {
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur(); // remove focus
-  }
-  setEditOpen(false);
-};
-
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({
-    open: false,
-    message: "",
-  });
-
-  // ✅ Unified fetch for list name + items
   const fetchListData = async () => {
     try {
       const [listRes, itemsRes] = await Promise.all([
         api.get(`/lists/${id}`),
         api.get(`/lists/${id}/items`),
       ]);
-
       const listData = listRes.data.list || listRes.data;
       setListName(listData.name || "Unnamed List");
       setItems(itemsRes.data.items || []);
@@ -124,7 +166,6 @@ const handleCloseEditDialog = () => {
     fetchListData();
   }, [id]);
 
-  // ✅ Add item
   const handleAddItem = async () => {
     if (!newItem.name.trim()) return;
     try {
@@ -139,7 +180,6 @@ const handleCloseEditDialog = () => {
     }
   };
 
-  // ✅ Toggle bought
   const handleToggleBought = async (itemId: string) => {
     try {
       await api.patch(`/lists/${id}/items/${itemId}/toggle`);
@@ -151,7 +191,6 @@ const handleCloseEditDialog = () => {
     }
   };
 
-  // ✅ Delete single item
   const handleDelete = async (itemId: string) => {
     try {
       await api.delete(`/lists/${id}/items/${itemId}`);
@@ -162,7 +201,6 @@ const handleCloseEditDialog = () => {
     }
   };
 
-  // ✅ Clear all bought
   const handleClearBought = async () => {
     const boughtItems = items.filter((item) => item.bought);
     if (boughtItems.length === 0) {
@@ -205,7 +243,7 @@ const handleCloseEditDialog = () => {
         {listName}
       </Typography>
 
-      {/* Buttons */}
+      {/* Top Buttons */}
       <Box
         sx={{
           width: "100%",
@@ -242,17 +280,14 @@ const handleCloseEditDialog = () => {
         </Button>
       </Box>
 
-      {/* ✅ Items list */}
+      {/* Items List */}
       {items.length === 0 ? (
         <Typography>No items found. Add one!</Typography>
       ) : (
         <List sx={{ width: "100%", maxWidth: 600 }}>
           {[...items]
             .sort((a, b) => {
-              // 1️⃣ Unbought items first
               if (a.bought !== b.bought) return a.bought ? 1 : -1;
-
-              // 2️⃣ Within the same bought state, sort by section
               return (a.section || "").localeCompare(b.section || "");
             })
             .map((item) => (
@@ -263,25 +298,22 @@ const handleCloseEditDialog = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  bgcolor: "background.paper", // uses your #121212
+                  bgcolor: "background.paper",
                   borderRadius: 2,
                   mb: 1,
                   px: 2,
-                  "&:hover": {
-                    bgcolor: "#1a1a1a",
-                  },
+                  "&:hover": { bgcolor: "#1a1a1a" },
                 }}
               >
-                {/* Left side: checkmark and text */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <CheckIcon
                     onClick={() => handleToggleBought(item.id)}
                     sx={{
                       cursor: "pointer",
-                      color: item.bought ? "#1bd760" : "#535353", // Spotify green or medium gray
+                      color: item.bought ? "#1bd760" : "#535353",
                       transition: "color 0.2s ease",
                       "&:hover": {
-                        color: item.bought ? "#1ed760" : "#b3b3b3", // lighter green / gray on hover
+                        color: item.bought ? "#1ed760" : "#b3b3b3",
                       },
                     }}
                   />
@@ -293,7 +325,6 @@ const handleCloseEditDialog = () => {
                   />
                 </Box>
 
-                {/* Right side: edit + delete */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <IconButton
                     color="inherit"
@@ -319,8 +350,8 @@ const handleCloseEditDialog = () => {
         </List>
       )}
 
-      {/* Add item dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)}>
+      {/* Add Item Dialog */}
+      <DialogWrapper open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Add Item</DialogTitle>
         <DialogContent>
           <TextField
@@ -364,129 +395,113 @@ const handleCloseEditDialog = () => {
             Add
           </Button>
         </DialogActions>
-      </Dialog>
+      </DialogWrapper>
 
+      {/* Edit Item Dialog */}
+      <DialogWrapper
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        paperSx={{
+          minWidth: 400,
+          maxWidth: "90%",
+          minHeight: 380,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
+      >
+        <DialogTitle sx={{ fontSize: 20 }}>Edit Item</DialogTitle>
+        <DialogContent
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            mt: 1,
+          }}
+        >
+          <TextField
+            label="Item name"
+            fullWidth
+            variant="outlined"
+            value={editItem?.name || ""}
+            onChange={(e) =>
+              setEditItem({ ...editItem!, name: e.target.value })
+            }
+            InputLabelProps={{ shrink: true }}
+            margin="normal"
+            sx={{ input: { color: "#fff", padding: "10px 12px" } }}
+          />
+          <TextField
+            label="Quantity"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={editItem?.quantity || 1}
+            onChange={(e) =>
+              setEditItem({ ...editItem!, quantity: Number(e.target.value) })
+            }
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            select
+            label="Section"
+            fullWidth
+            variant="outlined"
+            value={editItem?.section || DEFAULT_SECTION}
+            onChange={(e) =>
+              setEditItem({ ...editItem!, section: e.target.value })
+            }
+            SelectProps={{ native: true }}
+            InputLabelProps={{ shrink: true }}
+          >
+            {SECTIONS.map((section) => (
+              <option key={section} value={section}>
+                {section}
+              </option>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center", mt: 3, pb: 3, gap: 2 }}>
+          <Button
+            onClick={() => setEditOpen(false)}
+            variant="outlined"
+            sx={{ minWidth: 100 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            sx={{
+              minWidth: 120,
+              fontWeight: 600,
+              bgcolor: "#1bd760",
+              "&:hover": { bgcolor: "#1ed760" },
+            }}
+            onClick={async () => {
+              if (!editItem) return;
+              try {
+                await api.put(`/lists/${id}/items/${editItem.id}`, editItem);
+                setItems((prev) =>
+                  prev.map((i) => (i.id === editItem.id ? editItem : i))
+                );
+                setSnackbar({ open: true, message: "Item updated!" });
+                setEditOpen(false);
+              } catch (err) {
+                console.error("Error updating item:", err);
+                setSnackbar({
+                  open: true,
+                  message: "Failed to update item.",
+                });
+              }
+            }}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </DialogWrapper>
 
-      {/* Edit item dialog */}
-{/* Edit item dialog */}
-<Dialog
-  open={editOpen}
-  onClose={handleCloseEditDialog}
-  TransitionComponent={Transition}
-  disableEnforceFocus
-  PaperProps={{
-    sx: {
-      bgcolor: "#121212",
-      color: "#fff",
-      borderRadius: 3,
-      p: 3,               // more padding inside dialog
-      minWidth: 400,      // wider to fit labels
-      maxWidth: "90%",
-      minHeight: 380,     // taller so fields aren’t squished
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-    },
-  }}
->
-  <DialogTitle sx={{ fontSize: 20 }}>Edit Item</DialogTitle>
-
-  <DialogContent
-    sx={{
-      display: "flex",
-      flexDirection: "column",
-      gap: 3,            // more space between fields
-      mt: 1,
-    }}
-  >
-   <TextField
-  label="Item name"
-  fullWidth
-  variant="outlined"
-  value={editItem?.name || ""}
-  onChange={(e) => setEditItem({ ...editItem!, name: e.target.value })}
-  InputLabelProps={{ shrink: true }}
-  margin="normal"       // use "normal" instead of "dense"
-  sx={{
-    input: { color: "#fff", padding: "10px 12px" },  // more vertical padding
-  }}
-/>
-    <TextField
-      label="Quantity"
-      type="number"
-      fullWidth
-      variant="outlined"
-      value={editItem?.quantity || 1}
-      onChange={(e) =>
-        setEditItem({ ...editItem!, quantity: Number(e.target.value) })
-      }
-      InputLabelProps={{ shrink: true }}
-    />
-    <TextField
-      select
-      label="Section"
-      fullWidth
-      variant="outlined"
-      value={editItem?.section || DEFAULT_SECTION}
-      onChange={(e) =>
-        setEditItem({ ...editItem!, section: e.target.value })
-      }
-      SelectProps={{ native: true }}
-      InputLabelProps={{ shrink: true }}
-    >
-      {SECTIONS.map((section) => (
-        <option key={section} value={section}>
-          {section}
-        </option>
-      ))}
-    </TextField>
-  </DialogContent>
-
-  <DialogActions
-    sx={{
-      justifyContent: "center",
-      mt: 3,
-      pb: 3,
-      gap: 2,
-    }}
-  >
-    <Button
-      onClick={() => setEditOpen(false)}
-      variant="outlined"
-      sx={{ minWidth: 100 }}
-    >
-      Cancel
-    </Button>
-    <Button
-      variant="contained"
-      sx={{
-        minWidth: 120,
-        fontWeight: 600,
-        bgcolor: "#1bd760",
-        "&:hover": { bgcolor: "#1ed760" },
-      }}
-      onClick={async () => {
-        if (!editItem) return;
-        try {
-          await api.put(`/lists/${id}/items/${editItem.id}`, editItem);
-          setItems((prev) =>
-            prev.map((i) => (i.id === editItem.id ? editItem : i))
-          );
-          setSnackbar({ open: true, message: "Item updated!" });
-          setEditOpen(false);
-        } catch (err) {
-          console.error("Error updating item:", err);
-          setSnackbar({ open: true, message: "Failed to update item." });
-        }
-      }}
-    >
-      Save Changes
-    </Button>
-  </DialogActions>
-</Dialog>
-
-      {/* Confirm delete bought items dialog */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+      {/* Confirm Delete All Bought */}
+      <DialogWrapper open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>Delete All Bought Items</DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2 }}>
@@ -517,10 +532,10 @@ const handleCloseEditDialog = () => {
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
+      </DialogWrapper>
 
-      {/* Confirm delete single item */}
-      <Dialog
+      {/* Confirm Delete One */}
+      <DialogWrapper
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
       >
@@ -547,7 +562,7 @@ const handleCloseEditDialog = () => {
             Yes, delete
           </Button>
         </DialogActions>
-      </Dialog>
+      </DialogWrapper>
 
       {/* Snackbar */}
       <Snackbar
